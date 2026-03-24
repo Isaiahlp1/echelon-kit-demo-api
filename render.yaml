@@ -1,0 +1,22 @@
+# Render Blueprint — Echelon Kit Demo API
+# Deploy: connect this repo to Render and it auto-detects render.yaml
+
+services:
+  - type: web
+    name: echelon-kit-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    envVars:
+      - key: PERPLEXITY_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: PORT
+        value: "8000"
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - api.py
+        - requirements.txt
+        - Dockerfile
+        - sonar-tools/**
