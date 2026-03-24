@@ -15,6 +15,11 @@ COPY api.py .
 # The sonar_client module is imported by echelon-demo.py
 ENV PYTHONPATH="/app/sonar-tools:${PYTHONPATH}"
 
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
 # Expose port (Render assigns $PORT, default 8000)
 EXPOSE 8000
 

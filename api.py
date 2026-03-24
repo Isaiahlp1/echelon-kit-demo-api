@@ -83,13 +83,10 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8000",
-        # Allow any S3 preview URLs during development
-        "https://*.s3.amazonaws.com",
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type"],
-    allow_origin_regex=r"https://.*\.s3\.amazonaws\.com",
 )
 
 # ---------------------------------------------------------------------------
@@ -117,11 +114,20 @@ def _check_rate_limit(ip: str) -> bool:
     return True
 
 
+# Render's load balancer sets X-Forwarded-For; only trust the LAST entry
+# (the one added by Render's proxy, not user-supplied headers)
 def _get_client_ip(request: Request) -> str:
-    """Extract client IP, respecting X-Forwarded-For for proxied deployments."""
+    """Extract client IP from Render's trusted proxy header.
+    
+    Render appends the real client IP as the rightmost entry in
+    X-Forwarded-For. We use that instead of the leftmost (which
+    can be spoofed by the client).
+    """
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        # Rightmost IP = added by Render's load balancer (trusted)
+        parts = [p.strip() for p in forwarded.split(",")]
+        return parts[-1] if parts else "unknown"
     return request.client.host if request.client else "unknown"
 
 
